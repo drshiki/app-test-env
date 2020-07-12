@@ -1,0 +1,12 @@
+digraph {
+    
+    node[shape=box]
+    {rank=same; web1; web2}
+    {rank=same; core1; core2}
+    apache[label="apache load balancer"]
+    apache -> web1
+    apache -> web2
+    web1 -> core1
+    web2 -> core2
+    core1 -> core2[label="Jgroups"; dir=both]
+}

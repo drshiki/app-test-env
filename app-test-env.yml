@@ -1,0 +1,71 @@
+version: '3'
+services:
+  mariadb-server:
+    image: mariadb:10.4
+    container_name:  mariadb-server
+    # command: mysql -hsome-mariadb -uroot -p123456
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d
+    ports:
+      - 13306:3306
+  
+  mylb:
+    build:
+      context: .
+      dockerfile: lb.dockerfile
+      args:
+        https_proxy: $HTTP_PROXY
+        http_proxy: $HTTP_PROXY 
+        HTTP_PROXY: $HTTP_PROXY
+        HTTPS_PROXY: $HTTP_PROXY
+        NO_PROXY: $NO_PROXY
+        no_proxy: $NO_PROXY
+    ports:
+      - 18000:80
+    depends_on:
+      - app
+      - app2
+      - mariadb-server
+    container_name: mylb
+
+  app:
+    build:
+      context: .
+      dockerfile: app.dockerfile
+      args:
+        https_proxy: $HTTP_PROXY
+        http_proxy: $HTTP_PROXY 
+        HTTP_PROXY: $HTTP_PROXY
+        HTTPS_PROXY: $HTTP_PROXY
+        NO_PROXY: $NO_PROXY
+        no_proxy: $NO_PROXY
+    container_name: app
+    volumes:
+      - ~/webapps:/usr/local/tomcat/webapps
+    ports:
+      - 18080:8080
+    command: ["entrypoint.sh", "-d", "mariadb-server:3306", "-c", "catalina.sh run"]
+    depends_on:
+      - mariadb-server
+
+  app2:
+    build:
+      context: .
+      dockerfile: app2.dockerfile
+      args:
+        https_proxy: $HTTP_PROXY
+        http_proxy: $HTTP_PROXY 
+        HTTP_PROXY: $HTTP_PROXY
+        HTTPS_PROXY: $HTTP_PROXY
+        NO_PROXY: $NO_PROXY
+        no_proxy: $NO_PROXY
+    container_name: app2
+    volumes:
+      - ~/webapps2:/usr/local/tomcat/webapps
+    ports:
+      - 28080:8080
+    command: ["entrypoint.sh", "-d", "mariadb-server:3306", "-c", "catalina.sh run"]
+    depends_on:
+      - mariadb-server
